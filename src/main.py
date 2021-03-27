@@ -1,0 +1,254 @@
+import numpy as np
+import time
+from typing import List
+
+from data_processing import Data
+from LDP.sue import *
+from data_weighted_summation import DWS
+from LDP.krr import *
+from ULDP.ukrr import *
+from PSULDP.pskrr import *
+
+
+def run_sue():
+    # url = 'data/kosarak.dat'
+    url = 'data/bank-additional-full.csv'
+    data = Data(url)
+    print('time1', time.time() - time_start)
+    # data.show_data_information()
+
+    # # 计算真实概率
+    # get_true(data, url)
+
+    # 假定有h个隐私级别
+    h = 5
+    epsilon_list = [1.0, 2.0, 3.0, 4.0, 5.0]
+    xs = [1, 2, 3, 4, 5, 6]
+    xn = [7, 8, 9, 10, 11, 12]
+
+    usue1 = ULDPSUE(data, epsilon_list[0], xs, xn)
+    usue2 = ULDPSUE(data, epsilon_list[1], xs, xn)
+    usue3 = ULDPSUE(data, epsilon_list[2], xs, xn)
+    usue4 = ULDPSUE(data, epsilon_list[3], xs, xn)
+    usue5 = ULDPSUE(data, epsilon_list[4], xs, xn)
+
+    rs1 = [0 for _ in range(len(data.domain))]
+    rs2 = [0 for _ in range(len(data.domain))]
+    rs3 = [0 for _ in range(len(data.domain))]
+    rs4 = [0 for _ in range(len(data.domain))]
+    rs5 = [0 for _ in range(len(data.domain))]
+
+    print('time2', time.time() - time_start)
+    #  记录每个隐私级别下有多少人数
+    n_list = [0 for _ in range(h)]
+    with open(url, 'r') as f:
+        for line in f.readlines():
+            # 移除头尾换行符
+            line = line.strip()
+            # 将一行中的数字划分开
+            linelist = line.split(' ')
+            x = int(linelist[0])
+
+            # 用户随机选择隐私级别
+            level = np.random.randint(1, 6)
+            if level == 1:
+                encode_x = usue1.encode(x)
+                per_x = usue1.perturb(encode_x)
+                for i in range(len(data.domain)):
+                    rs1[i] += per_x[i]
+                n_list[level - 1] += 1
+            elif level == 2:
+                encode_x = usue2.encode(x)
+                per_x = usue2.perturb(encode_x)
+                for i in range(len(data.domain)):
+                    rs2[i] += per_x[i]
+                n_list[level - 1] += 1
+            elif level == 3:
+                encode_x = usue3.encode(x)
+                per_x = usue3.perturb(encode_x)
+                for i in range(len(data.domain)):
+                    rs3[i] += per_x[i]
+                n_list[level - 1] += 1
+            elif level == 4:
+                encode_x = usue4.encode(x)
+                per_x = usue4.perturb(encode_x)
+                for i in range(len(data.domain)):
+                    rs4[i] += per_x[i]
+                n_list[level - 1] += 1
+            elif level == 5:
+                encode_x = usue5.encode(x)
+                per_x = usue5.perturb(encode_x)
+                for i in range(len(data.domain)):
+                    rs5[i] += per_x[i]
+                n_list[level - 1] += 1
+            else:
+                print('怎么会执行到这一步呢1')
+    print('time3', time.time() - time_start)
+    rs1 = usue1.estimation(rs1, n_list[0])
+    rs2 = usue2.estimation(rs2, n_list[1])
+    rs3 = usue3.estimation(rs3, n_list[2])
+    rs4 = usue4.estimation(rs4, n_list[3])
+    rs5 = usue5.estimation(rs5, n_list[4])
+    # print(get_mse(rs1, true_p_bank))
+    # print(get_mse(rs2, true_p_bank))
+    # print(get_mse(rs3, true_p_bank))
+    # print(get_mse(rs4, true_p_bank))
+    # print(get_mse(rs5, true_p_bank))
+    print('time4', time.time() - time_start)
+    fxn = \
+        0.07099155093716616 + 0.024618821015829854 + 0.03450033990482665 + \
+        0.02124405166553365 + 0.008012042342429833 + 0.03535010197144799
+    fxn1 = 0
+    for i in range(6, 12):
+        fxn1 += rs5[i]
+    dws = DWS(data, h, epsilon_list, xs, xn, n_list, fxn)
+    dws.getw()
+    rs = dws.weighted_sum([rs1, rs2, rs3, rs4, rs5])
+    # print(get_mse(rs, true_p_bank))
+    # print(rs)
+    print('time5', time.time() - time_start)
+    return [get_mse(rs1, true_p_bank), get_mse(rs2, true_p_bank), get_mse(rs3, true_p_bank), get_mse(rs4, true_p_bank),
+            get_mse(rs5, true_p_bank), get_mse(rs, true_p_bank)]
+
+    # 专利 百分数误差
+    # return [get_percentage(rs1, true_p_bank), get_percentage(rs2, true_p_bank), get_percentage(rs3, true_p_bank),
+    #         get_percentage(rs4, true_p_bank), get_percentage(rs5, true_p_bank), get_percentage(rs, true_p_bank)]
+
+
+# 得到数据集中的真实概率
+def get_true(data: Data, url):
+    true_list = [0 for _ in range(len(data.domain))]
+    with open(url, 'r') as f:
+        for line in f.readlines():
+            # 移除头尾换行符
+            line = line.strip()
+            # 将一行中的数字划分开
+            linelist = line.split(' ')
+            linelist = [int(x) for x in linelist]
+            temp_list = linelist[0]
+            true_list[data.domain.index(temp_list)] += 1
+    for i in range(len(true_list)):
+        true_list[i] /= data.dataNum
+    print('真实概率为：')
+    print(true_list)
+    return true_list
+
+
+# 计算百分数化的误差
+def get_percentage(estimation: List, true_p: List):
+    length = len(estimation)
+    rs = [0 for _ in range(length)]
+    for i in range(len(rs)):
+        rs[i] = abs(estimation[i] - true_p[i]) / true_p[i]
+    return rs
+
+
+# 计算mse
+def get_mse(list1: List, list2: List):
+    length = len(list1)
+    mse = 0
+    for i in range(length):
+        mse += (list1[i] - list2[i]) * (list1[i] - list2[i])
+    mse /= length
+    return mse
+
+
+if __name__ == '__main__':
+
+    # data = Data("data/test.txt")
+    data = Data("./data/bank-additional-full.csv")
+    # data = Data("./data/kosarak.dat")
+
+    # data.show_data_information()
+
+    epsilon = 1
+    xn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    xs = [10, 11, 12]
+    level_epsilon = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    # krr = KRR(epsilon, data.domain, data.data)
+    # krr.run()
+    ukrr_mse = 0
+    pskrr_mse = 0
+    pskrr_notdwsnotdr_mse = 0
+    pskrr_notdws = 0
+    pskrr_notdr = 0
+    replication = 100
+    for i in range(replication):
+        ukrr = UKRR(epsilon, data.domain, data.data, xs, xn)
+        ukrr.run()
+        ukrr.estimate(ukrr.per_data)
+
+        pskrr = PSKRR(data.domain, data.data, xs, xn, level_epsilon)
+        pskrr.run()
+
+
+        ukrr_mse += get_mse(ukrr.es_data, data.true_p)
+        pskrr_mse += get_mse(pskrr.level_es_data[0], data.true_p)
+        pskrr_notdwsnotdr_mse += get_mse(pskrr.notdws_notdr[0], data.true_p)
+        pskrr_notdws += get_mse(pskrr.notdws[0], data.true_p)
+        pskrr_notdr += get_mse(pskrr.notdr[0], data.true_p)
+    ukrr_mse /= replication
+    pskrr_mse /= replication
+    pskrr_notdwsnotdr_mse/=replication
+    pskrr_notdws/=replication
+    pskrr_notdr/=replication
+
+
+    print(pskrr_notdwsnotdr_mse, pskrr_mse, ukrr_mse)
+    print('ukrr',ukrr_mse)
+    print('pskrr',pskrr_mse)
+    print('pskrr_notdws',pskrr_notdws)
+    print('pskrr_notdr',pskrr_notdr)
+    print('pskrr_notdrnotdws',pskrr_notdwsnotdr_mse)
+
+    if pskrr_mse < ukrr_mse:
+        print('pskrr比较小')
+    else:
+        print('ukrr比较小')
+
+    if pskrr_notdwsnotdr_mse < pskrr_mse:
+        print('没有使用过dws比较小')
+    else:
+        print('使用过dws比较小')
+
+    exit()
+
+    time_start = time.time()
+    # bank数据集中的真实概率
+    true_p_bank = [0.025735651160532193, 0.09636301835486064, 0.25303486452364765, 0.2246770904146839,
+                   0.1637127318636496, 0.04175973584539186, 0.07099155093716616, 0.024618821015829854,
+                   0.03450033990482665, 0.02124405166553365, 0.008012042342429833, 0.03535010197144799]
+
+    # 计算mse
+    t = [0.0 for _ in range(6)]
+    for _ in range(10):
+        temp = run_sue()
+
+        for i_main in range(len(temp)):
+            t[i_main] += temp[i_main]
+    for i_main in range(len(t)):
+        t[i_main] /= 10
+    print(t)
+
+    # 计算百分数误差，用于专利
+    # t = [[0 for _ in range(12)] for _ in range(6)]
+    # for _ in range(10):
+    #     temp = run_sue()
+    #     for a in range(6):
+    #         for b in range(12):
+    #             t[a][b] += temp[a][b]
+    # print(time.time() - time_start)
+    # for a in range(6):
+    #     for b in range(12):
+    #         t[a][b] /= 10
+    # print(time.time() - time_start)
+    # for a in range(5):
+    #     for b in range(12):
+    #         if t[a][b] < t[a + 1][b]:
+    #             print(a, b)
+    #         if t[a][b] < t[5][b]:
+    #             print('rs出错了', a, b)
+    # print(time.time() - time_start)
+    # for a in t:
+    #     print(a)
