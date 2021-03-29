@@ -32,12 +32,10 @@ class UKRR(object):
         self.q = 1 / (e_epsilon + xs_len - 1)
         self.z = (e_epsilon - 1) / (e_epsilon + xs_len - 1)
 
-
     # 为了与psuldp结合，这里的run不包含估计过程
     def run(self):
         for x in self.data:
             self.per_data.append(self.perturb(self.encode(x)))
-
 
     # 此时传入的是用户的原始数据，并不是该数据在domain中的位置
     def encode(self, x: int) -> int:

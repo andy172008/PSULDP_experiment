@@ -164,6 +164,24 @@ if __name__ == '__main__':
     # data = Data("./data/kosarak.dat")
 
     # data.show_data_information()
+    epsilon = 1
+    xn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    xs = [10, 11, 12]
+    sue = SUE(epsilon, data.domain, data.data)
+    usue = USUE(epsilon, data.domain, data.data, xs, xn)
+    sue_mse = 0
+    usue_mse = 0
+    sue.run()
+    usue.run()
+    usue.estimation(usue.per_data)
+    for _ in range(100):
+        sue_mse += get_mse(sue.es_data, data.true_p)
+        usue_mse += get_mse(usue.es_data, data.true_p)
+    print(sue_mse, usue_mse)
+    if usue_mse < sue_mse:
+        print('usue比较小')
+        print(usue_mse/sue_mse)
+    exit()
 
     epsilon = 1
     xn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -175,8 +193,8 @@ if __name__ == '__main__':
     ukrr_mse = 0
     pskrr_mse = 0
     pskrr_notdwsnotdr_mse = 0
-    pskrr_notdws = 0
-    pskrr_notdr = 0
+    pskrr_notdws_mse = 0
+    pskrr_notdr_mse = 0
     replication = 100
     for i in range(replication):
         ukrr = UKRR(epsilon, data.domain, data.data, xs, xn)
@@ -186,25 +204,23 @@ if __name__ == '__main__':
         pskrr = PSKRR(data.domain, data.data, xs, xn, level_epsilon)
         pskrr.run()
 
-
         ukrr_mse += get_mse(ukrr.es_data, data.true_p)
         pskrr_mse += get_mse(pskrr.level_es_data[0], data.true_p)
         pskrr_notdwsnotdr_mse += get_mse(pskrr.notdws_notdr[0], data.true_p)
-        pskrr_notdws += get_mse(pskrr.notdws[0], data.true_p)
-        pskrr_notdr += get_mse(pskrr.notdr[0], data.true_p)
+        pskrr_notdws_mse += get_mse(pskrr.notdws[0], data.true_p)
+        pskrr_notdr_mse += get_mse(pskrr.notdr[0], data.true_p)
     ukrr_mse /= replication
     pskrr_mse /= replication
-    pskrr_notdwsnotdr_mse/=replication
-    pskrr_notdws/=replication
-    pskrr_notdr/=replication
-
+    pskrr_notdwsnotdr_mse /= replication
+    pskrr_notdws_mse /= replication
+    pskrr_notdr_mse /= replication
 
     print(pskrr_notdwsnotdr_mse, pskrr_mse, ukrr_mse)
-    print('ukrr',ukrr_mse)
-    print('pskrr',pskrr_mse)
-    print('pskrr_notdws',pskrr_notdws)
-    print('pskrr_notdr',pskrr_notdr)
-    print('pskrr_notdrnotdws',pskrr_notdwsnotdr_mse)
+    print('ukrr', ukrr_mse)
+    print('pskrr', pskrr_mse)
+    print('pskrr_notdws', pskrr_notdws_mse)
+    print('pskrr_notdr', pskrr_notdr_mse)
+    print('pskrr_notdrnotdws', pskrr_notdwsnotdr_mse)
 
     if pskrr_mse < ukrr_mse:
         print('pskrr比较小')
@@ -217,7 +233,7 @@ if __name__ == '__main__':
         print('使用过dws比较小')
 
     exit()
-############################################################################################################################
+    ############################################################################################################################
     time_start = time.time()
     # bank数据集中的真实概率
     true_p_bank = [0.025735651160532193, 0.09636301835486064, 0.25303486452364765, 0.2246770904146839,
