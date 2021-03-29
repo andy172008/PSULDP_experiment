@@ -1,118 +1,65 @@
 from typing import List
-import math
 import numpy as np
 from data_processing import Data
 
 
 class SUE(object):
-    def __init__(self, data: Data, epsilon: float):
+    def __init__(self, epsilon: float, domain: list, data: list, ):
         super(SUE, self).__init__()
-
-        self.data = data
+        # 隐私预算
         self.epsilon = epsilon
+        # 定义域
+        self.domain = domain
+        # 定义域的长度
+        self.d = len(domain)
+        # 总体数据
+        self.data = data
+        # 扰动后数据
+        self.per_data = []
+        # 总用户数据
+        self.n = len(data)
+        # 估计出的频率
+        self.es_data = []
 
-        e_x2 = math.exp(self.epsilon / 2)
+        e_x2 = np.exp(self.epsilon / 2)
         self.p = e_x2 / (e_x2 + 1)
         self.q = 1 / (e_x2 + 1)
-        self.z = (e_x2 - 1) / e_x2
+
+    def run(self):
+        for x in self.data:
+            self.per_data.append(self.perturb(self.encode(x)))
+        count = [0 for _ in range(self.d)]
+        for x in self.per_data:
+            count = np.sum([count, x], axis=0)
+        self.estimation(count)
 
     # 将x编码
     def encode(self, x: int) -> List:
-        rs = [0 for _ in range(len(self.data.domain))]
-        xpos = self.data.domain.index(x)
+        rs = [0 for _ in range(self.d)]
+        xpos = self.domain.index(x)
         rs[xpos] = 1
         return rs
 
     # 将编码之后的数据进行扰动
-    def perturb(self, encode_x: List) -> List:
-        for i in range(len(encode_x)):
-            if encode_x[i] == 1:
+    def perturb(self, x: list) -> List:
+        for i in range(self.d):
+            if x[i] == 1:
                 if np.random.uniform(0, 1) < self.p:
-                    encode_x[i] = 1
+                    x[i] = 1
                 else:
-                    encode_x[i] = 0
+                    x[i] = 0
             else:
                 if np.random.uniform(0, 1) < self.q:
-                    encode_x[i] = 1
+                    x[i] = 1
                 else:
-                    encode_x[i] = 0
-        return encode_x
+                    x[i] = 0
+        return x
 
     # 以扰动之后的结果，对原始数据的频率分布进行估算
     # 请注意，这里输入的List中，存放的不是扰动后的频率值，而是扰动后的数量
-    # n为当前隐私级别中数据大小
-    def estimation(self, count_list: List, n: int) -> List:
-        rs = [0 for _ in range(len(count_list))]
-        e_x2 = math.exp(self.epsilon / 2)
-        for i in range(len(count_list)):
-            rs[i] = ((e_x2 + 1) * count_list[i] - n) / (n * (e_x2 - 1))
-        return rs
+    # 这里的per_data,是将所有的用户扰动数据对位相加得到的
+    def estimation(self, per_data: List):
+        for i in range(self.d):
+            self.es_data.append((per_data[i] - self.n * self.q) / (self.n * (self.p - self.q)))
 
 
-class ULDPSUE(object):
-    def __init__(self, data: Data, epsilon: float, xs: List, xn: List):
-        super(ULDPSUE, self).__init__()
-        self.data = data
-        self.epsilon = epsilon
-
-        e_x2 = math.exp(self.epsilon / 2)
-        self.p = e_x2 / (e_x2 + 1)
-        self.q = 1 / (e_x2 + 1)
-        self.z = (e_x2 - 1) / e_x2
-        self.xs = xs
-        self.xn = xn
-
-    def encode(self, x: int) -> List:
-        rs = [0 for _ in range(len(self.data.domain))]
-        xpos = self.data.domain.index(x)
-        rs[xpos] = 1
-        return rs
-
-    def isXs(self, i: int):
-        if self.data.domain[i] in self.xs:
-            return True
-        else:
-            return False
-
-    # 将编码之后的数据进行扰动
-    def perturb(self, encode_x: List) -> List:
-        for i in range(len(encode_x)):
-            if self.isXs(i):
-                if encode_x[i] == 1:
-                    if np.random.uniform(0, 1) < self.p:
-                        # encode_x[i] = 1
-                        pass
-                    else:
-                        encode_x[i] = 0
-                else:
-                    if np.random.uniform(0, 1) < self.q:
-                        encode_x[i] = 1
-                    else:
-                        # encode_x[i] = 0
-                        pass
-            # 当前元素属于Xn
-            else:
-                if encode_x[i] == 1:
-                    if np.random.uniform(0, 1) < self.z:
-                        # encode_x[i] = 1
-                        pass
-                    else:
-                        encode_x[i] = 0
-                else:
-                    # encode_x[i] = 0
-                    pass
-        return encode_x
-
-    # 以扰动之后的结果，对原始数据的频率分布进行估算
-    # 请注意，这里输入的List中，存放的不是扰动后的频率值，而是扰动后的数量
-    # n为当前隐私级别中数据大小
-    def estimation(self, count_list: List, n: int) -> List:
-        rs = [0 for _ in range(len(count_list))]
-
-        e_x2 = math.exp(self.epsilon / 2)
-        for i in range(len(count_list)):
-            if self.isXs(i):
-                rs[i] = ((e_x2 + 1) * count_list[i] - n) / (n * (e_x2 - 1))
-            else:
-                rs[i] = (e_x2 * count_list[i]) / (n * (e_x2 - 1))
-        return rs

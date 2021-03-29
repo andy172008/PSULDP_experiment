@@ -4,7 +4,7 @@ from collections import Counter
 
 
 class KRR(object):
-    def __init__(self, epsilon: int, domain: list, data: list):
+    def __init__(self, epsilon: float, domain: list, data: list):
         super(KRR, self).__init__()
         # 隐私预算
         self.epsilon = epsilon
