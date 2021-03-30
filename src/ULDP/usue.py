@@ -75,11 +75,15 @@ class USUE(object):
     # 以扰动之后的结果，对原始数据的频率分布进行估算
     # 请注意，这里输入的List中，存放的不是扰动后的频率值，而是扰动后的数量
     # n为当前隐私级别中数据大小
-    def estimation(self, per_data: list):
+    def estimate(self, per_data: list):
         count = [0 for _ in range(self.d)]
+        count = np.array(count)
         for x in per_data:
-            count = np.sum([x, count], axis=0)
-
+            x_arr = np.array(x)
+            count = count + x_arr
+        count = count.tolist()
+        # 这是因为使用DR之后，数据总量可能会发生变化
+        self.n = len(per_data)
         for i in range(self.d):
             if self.isXs(i):
                 self.es_data.append((count[i] - self.n * self.q) / (self.n * (self.p - self.q)))

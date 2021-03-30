@@ -44,7 +44,7 @@ class PSKRR(object):
         for i in range(self.h):
             self.uldp.append(UKRR(level_epsilon[i], self.domain, self.level_data[i], self.xs, self.xn))
 
-    def run(self):
+    def run(self, level_i):
         for i in range(self.h):
             # 这一步在不同的level下生成了扰动后数据
             self.uldp[i].run()
@@ -60,10 +60,11 @@ class PSKRR(object):
         self.notdr = copy.deepcopy(self.level_es_data)
 
         # 现在进行dr操作
-        level_i = 1
-        for level_j in range(level_i+1, self.h + 1, 1):
+        for level_j in range(level_i + 1, self.h + 1, 1):
             self.dr(level_i, level_j)
-            print('已完成',level_j,level_i)
+        self.level_n = []
+        for x in self.level_per_data:
+            self.level_n.append(len(x))
 
         self.level_es_data = []
         for i in range(self.h):
@@ -79,7 +80,12 @@ class PSKRR(object):
             for j in range(len(self.domain)):
                 temp = 0
                 for k in range(i, -1, -1):
-                    temp += omega_list[k] * self.level_es_data[k][j]
+                    try:
+                        temp += omega_list[k] * self.level_es_data[k][j]
+                    except:
+                        print('1', len(omega_list), k)
+                        print('2', len(self.level_es_data), k)
+                        print('3', len(self.level_es_data[k]), j)
                 self.level_es_data[i][j] = temp
         pass
 
@@ -136,3 +142,18 @@ class PSKRR(object):
                 else:
                     per_x = choice(self.xs)
                     self.level_per_data[level_i - 1].append(per_x)
+
+# ukrr 1.9966930016617064e-05
+# pskrr 6.590688041311261e-06
+# pskrr_notdws 7.379278154691379e-06
+# pskrr_notdr 4.796454166734007e-05
+# pskrr_notdrnotdws 6.219920311112974e-05
+# pskrr比较小
+# 使用过dws比较小
+
+# time2 1.1320791244506836
+# time3 0.0002129077911376953
+# time4 0.00046896934509277344
+# time5 0.00019884109497070312
+# time6 0.41370129585266113
+# time7 0.5531949996948242

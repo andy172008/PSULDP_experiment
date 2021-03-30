@@ -12,6 +12,7 @@ from ULDP.uoue import *
 from PSULDP.pskrr import *
 from PSULDP.pssue import *
 from PSULDP.psoue import *
+import matplotlib.pyplot as plt
 
 
 # def run_sue():
@@ -158,98 +159,109 @@ def get_mse(list1: List, list2: List):
 
 
 if __name__ == '__main__':
-
+    time1 = time.time()
     # data = Data("data/test.txt")
-    data = Data("./data/bank-additional-full.csv")
-    # data = Data("./data/kosarak.dat")
+    # data = Data("./data/bank-additional-full.csv")
+    data = Data("./data/kosarak.dat")
 
+
+    # print(data.true_p)
     # data.show_data_information()
-    epsilon = 1
-    xn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    xs = [10, 11, 12]
-    sue = SUE(epsilon, data.domain, data.data)
-    usue = USUE(epsilon, data.domain, data.data, xs, xn)
-    sue_mse = 0
-    usue_mse = 0
-    sue.run()
-    usue.run()
-    usue.estimation(usue.per_data)
-    for _ in range(100):
-        sue_mse += get_mse(sue.es_data, data.true_p)
-        usue_mse += get_mse(usue.es_data, data.true_p)
-    print(sue_mse, usue_mse)
-    if usue_mse < sue_mse:
-        print('usue比较小')
-        print(usue_mse/sue_mse)
-    exit()
+    # epsilon = 1
+    # xn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    # xs = [10, 11, 12]
+    # sue = SUE(epsilon, data.domain, data.data)
+    # usue = USUE(epsilon, data.domain, data.data, xs, xn)
+    # sue_mse = 0
+    # usue_mse = 0
+    # sue.run()
+    # usue.run()
+    # usue.estimate(usue.per_data)
+    # for _ in range(100):
+    #     sue_mse += get_mse(sue.es_data, data.true_p)
+    #     usue_mse += get_mse(usue.es_data, data.true_p)
+    # print(sue_mse, usue_mse)
+    # if usue_mse < sue_mse:
+    #     print('usue比较小')
+    #     print(usue_mse/sue_mse)
+    # exit()
 
     epsilon = 1
-    xn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    xs = [10, 11, 12]
+    xn = [1, 2, 3]
+    xs = [4, 5, 6, 7, 8, 9, 10, 11, 12]
     level_epsilon = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     # krr = KRR(epsilon, data.domain, data.data)
     # krr.run()
-    ukrr_mse = 0
-    pskrr_mse = 0
-    pskrr_notdwsnotdr_mse = 0
-    pskrr_notdws_mse = 0
-    pskrr_notdr_mse = 0
-    replication = 100
+    u_mse = 0
+    ps_mse = 0
+    ps_notdwsnotdr_mse = 0
+    ps_notdws_mse = 0
+    ps_notdr_mse = 0
+    replication = 1
+
+    # 这个参数表示输出哪个隐私级别的结果
+    level_i = 10
     for i in range(replication):
-        ukrr = UKRR(epsilon, data.domain, data.data, xs, xn)
-        ukrr.run()
-        ukrr.estimate(ukrr.per_data)
+        u = UKRR(epsilon, data.domain, data.data, xs, xn)
+        u.run()
+        u.estimate(u.per_data)
+        print(time.time()-time1)
+        ps = PSKRR(data.domain, data.data, xs, xn, level_epsilon)
+        ps.run(level_i)
 
-        pskrr = PSKRR(data.domain, data.data, xs, xn, level_epsilon)
-        pskrr.run()
+        u_mse += get_mse(u.es_data, data.true_p)
+        ps_mse += get_mse(ps.level_es_data[level_i - 1], data.true_p)
+        ps_notdwsnotdr_mse += get_mse(ps.notdws_notdr[level_i - 1], data.true_p)
+        ps_notdws_mse += get_mse(ps.notdws[level_i - 1], data.true_p)
+        ps_notdr_mse += get_mse(ps.notdr[level_i - 1], data.true_p)
+    u_mse /= replication
+    ps_mse /= replication
+    ps_notdwsnotdr_mse /= replication
+    ps_notdws_mse /= replication
+    ps_notdr_mse /= replication
 
-        ukrr_mse += get_mse(ukrr.es_data, data.true_p)
-        pskrr_mse += get_mse(pskrr.level_es_data[0], data.true_p)
-        pskrr_notdwsnotdr_mse += get_mse(pskrr.notdws_notdr[0], data.true_p)
-        pskrr_notdws_mse += get_mse(pskrr.notdws[0], data.true_p)
-        pskrr_notdr_mse += get_mse(pskrr.notdr[0], data.true_p)
-    ukrr_mse /= replication
-    pskrr_mse /= replication
-    pskrr_notdwsnotdr_mse /= replication
-    pskrr_notdws_mse /= replication
-    pskrr_notdr_mse /= replication
+    # print(ps_notdwsnotdr_mse, ps_mse, u_mse)
+    print('u', u_mse)
+    print('ps', ps_mse)
+    print('ps_notdws', ps_notdws_mse)
+    print('ps_notdr', ps_notdr_mse)
+    print('ps_notdrnotdws', ps_notdwsnotdr_mse)
 
-    print(pskrr_notdwsnotdr_mse, pskrr_mse, ukrr_mse)
-    print('ukrr', ukrr_mse)
-    print('pskrr', pskrr_mse)
-    print('pskrr_notdws', pskrr_notdws_mse)
-    print('pskrr_notdr', pskrr_notdr_mse)
-    print('pskrr_notdrnotdws', pskrr_notdwsnotdr_mse)
+    print(time.time() - time1)
 
-    if pskrr_mse < ukrr_mse:
-        print('pskrr比较小')
-    else:
-        print('ukrr比较小')
+    plt.figure()
+    # plt.plot(2, 1, color="firebrick", linestyle="-", marker='o', markerfacecolor='none', label="SR")
+    # plt.plot(epsilon, 2, color="dodgerblue", linestyle="-", marker='*', label="PM")
+    # plt.plot(epsilon, 3, color="orange", linestyle="--", marker='o', markerfacecolor='none', label="NCU-SR")
+    # plt.plot(epsilon, 4, color="forestgreen", linestyle="--", marker='*', label="NCU-PM")
+    # plt.plot(epsilon, MSE_sample, color="black", linestyle="-.", label="non-privacy")
+    index = ['u', 'ps', 'ps_notdws', 'ps_notdr', 'ps_notdrnotdws']
+    value = [u_mse, ps_mse, ps_notdws_mse, ps_notdr_mse, ps_notdwsnotdr_mse]
+    plt.bar(index, value)
+    xlabel = 'level ' + str(level_i)
+    plt.xlabel(xlabel)
+    plt.ylabel('MSE')
+    plt.legend(loc="upper right")
 
-    if pskrr_notdwsnotdr_mse < pskrr_mse:
-        print('没有使用过dws比较小')
-    else:
-        print('使用过dws比较小')
-
-    exit()
+    plt.show()
     ############################################################################################################################
-    time_start = time.time()
-    # bank数据集中的真实概率
-    true_p_bank = [0.025735651160532193, 0.09636301835486064, 0.25303486452364765, 0.2246770904146839,
-                   0.1637127318636496, 0.04175973584539186, 0.07099155093716616, 0.024618821015829854,
-                   0.03450033990482665, 0.02124405166553365, 0.008012042342429833, 0.03535010197144799]
+    # time_start = time.time()
+    # # bank数据集中的真实概率
+    # true_p_bank = [0.025735651160532193, 0.09636301835486064, 0.25303486452364765, 0.2246770904146839,
+    #                0.1637127318636496, 0.04175973584539186, 0.07099155093716616, 0.024618821015829854,
+    #                0.03450033990482665, 0.02124405166553365, 0.008012042342429833, 0.03535010197144799]
 
-    # 计算mse
-    t = [0.0 for _ in range(6)]
-    for _ in range(10):
-        temp = run_sue()
-
-        for i_main in range(len(temp)):
-            t[i_main] += temp[i_main]
-    for i_main in range(len(t)):
-        t[i_main] /= 10
-    print(t)
+    # # 计算mse
+    # t = [0.0 for _ in range(6)]
+    # for _ in range(10):
+    #     temp = run_sue()
+    #
+    #     for i_main in range(len(temp)):
+    #         t[i_main] += temp[i_main]
+    # for i_main in range(len(t)):
+    #     t[i_main] /= 10
+    # print(t)
 
     # 计算百分数误差，用于专利
     # t = [[0 for _ in range(12)] for _ in range(6)]

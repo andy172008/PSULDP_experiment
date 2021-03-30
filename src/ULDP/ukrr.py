@@ -67,6 +67,6 @@ class UKRR(object):
             if x in self.xs:
                 x_count = count_dict.get(x, 0)
                 self.es_data.append((x_count - self.n * self.q) / (self.n * (self.p - self.q)))
-            if x in self.xn:
+            else:
                 x_count = count_dict.get(x, 0)
                 self.es_data.append(x_count / (self.n * self.z))
