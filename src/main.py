@@ -162,11 +162,11 @@ if __name__ == '__main__':
     time1 = time.time()
     # data = Data("data/test.txt")
     # data = Data("./data/bank-additional-full.csv")
-    data = Data("./data/kosarak.dat")
+    data = Data("./data/e-shop clothing 2008.csv")
 
 
-    # print(data.true_p)
-    # data.show_data_information()
+    print(data.true_p)
+    data.show_data_information()
     # epsilon = 1
     # xn = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     # xs = [10, 11, 12]
@@ -198,10 +198,10 @@ if __name__ == '__main__':
     ps_notdwsnotdr_mse = 0
     ps_notdws_mse = 0
     ps_notdr_mse = 0
-    replication = 1
+    replication = 50
 
     # 这个参数表示输出哪个隐私级别的结果
-    level_i = 10
+    level_i =2
     for i in range(replication):
         u = UKRR(epsilon, data.domain, data.data, xs, xn)
         u.run()
