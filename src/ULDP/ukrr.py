@@ -1,6 +1,8 @@
 import numpy as np
 from random import choice
 from collections import Counter
+import xxhash
+
 
 
 class UKRR(object):

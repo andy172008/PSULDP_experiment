@@ -1,3 +1,4 @@
+import time
 from typing import List
 import numpy as np
 
@@ -31,7 +32,10 @@ class USUE(object):
 
     def run(self):
         for x in self.data:
-            self.per_data.append(self.perturb(self.encode(x)))
+            a = self.encode(x)
+            b = self.perturb(a)
+            self.per_data.append(b)
+
 
     def encode(self, x: int) -> List:
         rs = [0 for _ in range(self.d)]
@@ -52,11 +56,13 @@ class USUE(object):
             if self.isXs(i):
                 if x[i] == 1:
                     if np.random.uniform(0, 1) < self.p:
+                    # if 0 < self.p:
                         x[i] = 1
                     else:
                         x[i] = 0
                 else:
                     if np.random.uniform(0, 1) < self.q:
+                    # if 0 < self.q:
                         x[i] = 1
                     else:
                         x[i] = 0
@@ -64,6 +70,7 @@ class USUE(object):
             else:
                 if x[i] == 1:
                     if np.random.uniform(0, 1) < self.z:
+                    # if 0 < self.z:
                         x[i] = 1
                     else:
                         x[i] = 0

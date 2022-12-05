@@ -56,7 +56,7 @@ class PSKRR(object):
 
         # 将没有经过dws和dr的数据储存一下
         self.notdws_notdr = copy.deepcopy(self.level_es_data)
-        self.dws()
+        self.dws(level_i)
         self.notdr = copy.deepcopy(self.level_es_data)
 
         # 现在进行dr操作
@@ -72,22 +72,15 @@ class PSKRR(object):
             self.uldp[i].estimate(self.level_per_data[i])
             self.level_es_data.append(copy.deepcopy(self.uldp[i].es_data))
         self.notdws = copy.deepcopy(self.level_es_data)
-        self.dws()
+        self.dws(level_i)
 
-    def dws(self):
-        for i in range(self.h - 1, -1, -1):
-            omega_list = self.get_omega_list(i + 1)
-            for j in range(len(self.domain)):
-                temp = 0
-                for k in range(i, -1, -1):
-                    try:
-                        temp += omega_list[k] * self.level_es_data[k][j]
-                    except:
-                        print('1', len(omega_list), k)
-                        print('2', len(self.level_es_data), k)
-                        print('3', len(self.level_es_data[k]), j)
-                self.level_es_data[i][j] = temp
-        pass
+    def dws(self, t):
+        omega_list = self.get_omega_list(t)
+        for j in range(len(self.domain)):
+            temp = 0
+            for k in range(t - 1, -1, -1):
+                temp += omega_list[k] * self.level_es_data[k][j]
+            self.level_es_data[t - 1][j] = temp
 
     # 返回一个长度为t的list
     def get_omega_list(self, t):
@@ -99,6 +92,9 @@ class PSKRR(object):
         if (cxs > 1):
             print('cxs', cxs)
 
+        # cxs = 0.5998106244537244
+#rs [0.0015750536738914458, 0.006965747027225552, 0.01617040065236408, 0.031284116397628424, 0.05247543470287987, 0.08187562574615996, 0.11998341677781389, 0.16333127960969787, 0.2241832110744084, 0.3021557143379304]
+#//rs [0.001601992117876391, 0.006749871887260684, 0.016635150356436104, 0.031278834503580266, 0.051543417706735, 0.08039520537879757, 0.12296067948571253, 0.16664124637485264, 0.22542649205671703, 0.29676711013203183]
         sum = 0
         for j in range(t):
             p_j = self.uldp[j].p
@@ -112,6 +108,8 @@ class PSKRR(object):
             sum += temp
         for j in range(t):
             rs[j] = rs[j] / sum
+
+        print('rs',rs)
         return rs
 
     # 这里的level_i是指的隐私级别，从1开始计数的，所以在使用的时候要减1才能对应上list中的实际位置

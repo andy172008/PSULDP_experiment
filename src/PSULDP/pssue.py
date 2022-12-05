@@ -58,7 +58,7 @@ class PSSUE(object):
         # 将没有经过dws和dr的数据储存一下
         self.notdws_notdr = copy.deepcopy(self.level_es_data)
 
-        self.dws()
+        self.dws(level_i)
 
         self.notdr = copy.deepcopy(self.level_es_data)
 
@@ -78,17 +78,16 @@ class PSSUE(object):
             self.level_es_data.append(copy.deepcopy(self.uldp[i].es_data))
         self.notdws = copy.deepcopy(self.level_es_data)
 
-        self.dws()
+        self.dws(level_i)
 
-    def dws(self):
-        for i in range(self.h - 1, -1, -1):
-            omega_list = self.get_omega_list(i + 1)
-            for j in range(len(self.domain)):
-                temp = 0
-                for k in range(i, -1, -1):
-                    temp += omega_list[k] * self.level_es_data[k][j]
-                self.level_es_data[i][j] = temp
-        pass
+
+    def dws(self, t):
+        omega_list = self.get_omega_list(t)
+        for j in range(len(self.domain)):
+            temp = 0
+            for k in range(t - 1, -1, -1):
+                temp += omega_list[k] * self.level_es_data[k][j]
+            self.level_es_data[t-1][j] = temp
 
     # 返回一个长度为t的list
     def get_omega_list(self, t):
@@ -97,9 +96,7 @@ class PSSUE(object):
         for i in range(len(self.domain)):
             if self.domain[i] in self.xs:
                 cxs += self.level_es_data[t - 1][i]
-        # cxs = 0.02124405166553365 + 0.008012042342429833 + 0.03535010197144799
-        # print('t=', t, 'cxs', cxs)
-
+        cxs = 0.025735651160532193 + 0.2246770904146839 + 0.024618821015829854 + 0.02124405166553365
         sum = 0
         for j in range(t):
             p_j = self.uldp[j].p

@@ -45,7 +45,7 @@ class Data(object):
                 #     if not i.isnumeric():
                 #         print('error:Non-digital data appears in the data')
                 #         print(num, line)
-                linelist = [int(x) for x in linelist]
+                linelist = [int(float(x)) for x in linelist]
                 for x in linelist:
                     self.data.append(x)
         count = Counter(self.data)
